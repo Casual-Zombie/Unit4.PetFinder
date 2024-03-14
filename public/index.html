@@ -2,14 +2,74 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="styles.css">
-    <title>Document</title>
+    <title>Pet Finder</title>
+    <link rel="stylesheet" type="text/css" href="styles.css">
 </head>
 <body>
     <h1>Pet Finder</h1>
-    
-    <script src="script.js"></script>
+
+    <form id="searchForm">
+        <label for="ownerSearch">Search by Owner's Name:</label>
+        <input type="text" id="ownerSearch" name="ownerSearch">
+        <button type="submit">Search</button>
+        <button type="button" onclick="resetFilter()">Reset</button>
+    </form>
+
+    <div id="allPets">
+        <h2>All Pets</h2>
+    </div>
+
+    <script>
+        function displayPets(pets) {
+            const allPetsDiv = document.getElementById('allPets');
+            allPetsDiv.innerHTML = ''; 
+            pets.forEach(pet => {
+                const petInfo = `
+                    <div>
+                        <h3><a href="pet.html?name=${encodeURIComponent(pet.name)}">${pet.name}</a></h3>
+                        <p>Owner: ${pet.owner}</p>
+                        <p>Breed: ${pet.breed}</p>
+                        <p>Age: ${pet.age}</p>
+                    </div>
+                `;
+                allPetsDiv.innerHTML += petInfo;
+            });
+        }
+
+        function handleSearch(event) {
+            event.preventDefault(); 
+            const ownerName = document.getElementById('ownerSearch').value.trim();
+            if (ownerName) {
+                fetch(`http://localhost:8080/api/v1/pets/owner?owner=${encodeURIComponent(ownerName)}`)
+                    .then(response => response.json())
+                    .then(pets => {
+                        if (pets.length > 0) {
+                            displayPets(pets); 
+                        } else {
+                            document.getElementById('allPets').innerHTML = '<p>No pets found with that owner.</p>';
+                        }
+                    })
+                    .catch(error => console.error('Error fetching pets:', error));
+            } else {
+                fetch('http://localhost:8080/api/v1/pets')
+                    .then(response => response.json())
+                    .then(pets => displayPets(pets))
+                    .catch(error => console.error('Error fetching pets:', error));
+            }
+        }
+
+        function resetFilter() {
+            document.getElementById('ownerSearch').value = ''; 
+            fetch('http://localhost:8080/api/v1/pets')
+                .then(response => response.json())
+                .then(pets => displayPets(pets))
+                .catch(error => console.error('Error fetching pets:', error));
+        }
+
+        document.getElementById('searchForm').addEventListener('submit', handleSearch);
+
+        handleSearch(new Event('submit'));
+    </script>
 </body>
 </html>
